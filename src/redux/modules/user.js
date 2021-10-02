@@ -4,42 +4,39 @@ import { produce } from "immer";
 import { setCookie, getCookie, deleteCookie } from "../../shared/Cookie";
 
 import { auth } from "../../shared/firebase";
-import firebase from "@firebase/app-compat";
+import firebase from "firebase/app";
 
-
-//actions(액션타입)
+// actions
 const LOG_OUT = "LOG_OUT";
 const GET_USER = "GET_USER";
-const SET_USER = "SER_USER";
+const SET_USER = "SET_USER";
 
-//action creators(액션생성함수)
+// action creators
 const logOut = createAction(LOG_OUT, (user) => ({ user }));
 const getUser = createAction(GET_USER, (user) => ({ user }));
 const setUser = createAction(SET_USER, (user) => ({ user }));
 
-//initialState
+// initialState
 const initialState = {
   user: null,
   is_login: false,
 };
 
-//middleware actions
+// middleware actions
 const loginFB = (id, pwd) => {
   return function (dispatch, getState, { history }) {
     auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then((res) => {
       auth
         .signInWithEmailAndPassword(id, pwd)
-        .then((userCredential) => {
-          // Signed in
-          // ...
-          var user = userCredential.user;
+        .then((user) => {
           console.log(user);
+
           dispatch(
             setUser({
-              user_name: user.multiFactor.user.displayName,
+              user_name: user.user.displayName,
               id: id,
               user_profile: "",
-              uid: user.multiFactor.user.uid,
+              uid: user.user.uid,
             })
           );
 
@@ -59,10 +56,7 @@ const signupFB = (id, pwd, user_name) => {
   return function (dispatch, getState, { history }) {
     auth
       .createUserWithEmailAndPassword(id, pwd)
-      .then((userCredential) => {
-        // Signed in
-        // ...
-        var user = userCredential.user;
+      .then((user) => {
         console.log(user);
 
         auth.currentUser
@@ -75,7 +69,7 @@ const signupFB = (id, pwd, user_name) => {
                 user_name: user_name,
                 id: id,
                 user_profile: "",
-                uid: user.multiFactor.user.uid,
+                uid: user.user.uid,
               })
             );
             history.push("/");
@@ -83,6 +77,9 @@ const signupFB = (id, pwd, user_name) => {
           .catch((error) => {
             console.log(error);
           });
+
+        // Signed in
+        // ...
       })
       .catch((error) => {
         var errorCode = error.code;
@@ -94,14 +91,10 @@ const signupFB = (id, pwd, user_name) => {
   };
 };
 
-const user_initial = {
-  user_name: "donggun2",
-};
-
 const loginCheckFB = () => {
-  return function (dispatch, getState, { history }) {
+  return function (dispatch, getState, {history}){
     auth.onAuthStateChanged((user) => {
-      if (user) {
+      if(user){
         dispatch(
           setUser({
             user_name: user.displayName,
@@ -110,23 +103,23 @@ const loginCheckFB = () => {
             uid: user.uid,
           })
         );
-      } else {
+      }else{
         dispatch(logOut());
       }
-    });
-  };
-};
+    })
+  }
+}
 
 const logoutFB = () => {
   return function (dispatch, getState, {history}) {
     auth.signOut().then(() => {
       dispatch(logOut());
-      history.replace("/");
+      history.replace('/');
     })
   }
 }
 
-//reducer
+// reducer
 export default handleActions(
   {
     [SET_USER]: (state, action) =>
@@ -135,18 +128,18 @@ export default handleActions(
         draft.user = action.payload.user;
         draft.is_login = true;
       }),
-    [LOG_OUT]: (state, aciton) =>
+    [LOG_OUT]: (state, action) =>
       produce(state, (draft) => {
         deleteCookie("is_login");
         draft.user = null;
         draft.is_login = false;
       }),
-    [GET_USER]: (state, aciton) => produce(state, (draft) => {}),
+    [GET_USER]: (state, action) => produce(state, (draft) => {}),
   },
   initialState
 );
 
-//action creator export
+// action creator export
 const actionCreators = {
   logOut,
   getUser,
