@@ -13,14 +13,13 @@ const Login = (props) => {
 
   const login = () => {
     if (id === "" || pwd === "") {
-      
       console.log(id);
-     
+
       window.alert("아이디 혹은 비밀번호가 공란입니다! 입력해주세요!");
       return;
     }
 
-    if(!emailCheck(id)) {
+    if (!emailCheck(id)) {
       window.alert("이메일 형식이 맞지 않습니다!");
     }
 
@@ -55,7 +54,6 @@ const Login = (props) => {
         <Button
           text="로그인하기"
           _onClick={() => {
-            console.log("로그인 함!");
             login();
           }}
         ></Button>
