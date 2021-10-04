@@ -1,10 +1,10 @@
 import React from "react";
-import { Grid, Text, Button, Image, Input } from "../elements";
+import { Grid, Text, Button, Input, Image } from "../elements";
 import Upload from "../shared/Upload";
 
 import { useSelector, useDispatch } from "react-redux";
 import { actionCreators as postActions } from "../redux/modules/post";
-import { actionCreators as imageActions } from "../redux/modules/Image";
+import { actionCreators as imageActions } from "../redux/modules/image";
 
 const PostWrite = (props) => {
   const dispatch = useDispatch();

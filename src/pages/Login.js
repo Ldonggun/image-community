@@ -10,7 +10,7 @@ const Login = (props) => {
   const dispatch = useDispatch();
   const [id, setId] = React.useState("");
   const [pwd, setPwd] = React.useState("");
-
+  const onEnter = () => {}
   const login = () => {
     if (id === "" || pwd === "") {
       console.log(id);
@@ -49,6 +49,9 @@ const Login = (props) => {
             _onChange={(e) => {
               setPwd(e.target.value);
             }}
+            value={pwd}
+            is_submit
+            onSubmit={login}
           />
         </Grid>
         <Button
@@ -56,6 +59,7 @@ const Login = (props) => {
           _onClick={() => {
             login();
           }}
+          
         ></Button>
       </Grid>
     </React.Fragment>
