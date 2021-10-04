@@ -4,14 +4,17 @@ import { firestore, storage } from "../../shared/firebase";
 import "moment";
 import moment from "moment";
 
-import { actionCreators as imageActions } from "./Image";
+import { actionCreators as imageActions } from "./image";
 
 const SET_POST = "SET_POST";
 const ADD_POST = "ADD_POST";
 const EDIT_POST = "EDIT_POST";
 const LOADING = "LOADING";
 
-const setPost = createAction(SET_POST, (post_list, paging) => ({ post_list, paging }));
+const setPost = createAction(SET_POST, (post_list, paging) => ({
+  post_list,
+  paging,
+}));
 const addPost = createAction(ADD_POST, (post) => ({ post }));
 const editPost = createAction(EDIT_POST, (post_id, post) => ({
   post_id,
@@ -154,19 +157,18 @@ const addPostFB = (contents = "") => {
 
 const getPostFB = (start = null, size = 3) => {
   return function (dispatch, getState, { history }) {
-    
     let _paging = getState().post.paging;
 
-    if(_paging.start && !_paging.next){
+    if (_paging.start && !_paging.next) {
       return;
     }
-    
+
     dispatch(loading(true));
     const postDB = firestore.collection("post");
 
     let query = postDB.orderBy("insert_dt", "desc");
 
-    if(start){
+    if (start) {
       query = query.startAt(start);
     }
 
@@ -178,10 +180,13 @@ const getPostFB = (start = null, size = 3) => {
 
         let paging = {
           start: docs.docs[0],
-          next: docs.docs.length === size+1? docs.docs[docs.docs.length -1] : null,
+          next:
+            docs.docs.length === size + 1
+              ? docs.docs[docs.docs.length - 1]
+              : null,
           size: size,
-        }
-    
+        };
+
         docs.forEach((doc) => {
           let _post = doc.data(); //파이어스토에서 가져온 값들
           // Object.key() --> ['comment_cnt, 'contents',...] 키값들을 배열로 만들어줌.
@@ -234,16 +239,62 @@ const getPostFB = (start = null, size = 3) => {
     });
   };
 };
+
+const getOnePostFB = (id) => {
+  return function (dispatch, getState, { history }) {
+    const postDB = firestore.collection("post");
+    postDB
+      .doc(id)
+      .get()
+      .then((doc) => {
+        let _post = doc.data();
+
+        if (!_post) {
+          return;
+        }
+
+        let post = Object.keys(_post).reduce(
+          (acc, cur) => {
+            if (cur.indexOf("user_") !== -1) {
+              return {
+                ...acc,
+                user_info: { ...acc.user_info, [cur]: _post[cur] },
+              };
+            }
+            return { ...acc, [cur]: _post[cur] };
+          },
+          { id: doc.id, user_info: {} }
+        );
+
+        dispatch(setPost([post], { start: null, next: null, size: 3 }));
+      });
+  };
+};
 //reducr
 export default handleActions(
   {
     [SET_POST]: (state, action) =>
       produce(state, (draft) => {
         draft.list.push(...action.payload.post_list);
-        draft.paging = action.payload.paging;
+
+        // post_id가 같은 중복 항목을 제거합시다! :)
+        draft.list = draft.list.reduce((acc, cur) => {
+          // findIndex로 누산값(cur)에 현재값이 이미 들어있나 확인해요!
+          // 있으면? 덮어쓰고, 없으면? 넣어주기!
+          if (acc.findIndex((a) => a.id === cur.id) === -1) {
+            return [...acc, cur];
+          } else {
+            acc[acc.findIndex((a) => a.id === cur.id)] = cur;
+            return acc;
+          }
+        }, []);
+
+        // paging이 있을 때만 넣기
+        if (action.payload.paging) {
+          draft.paging = action.payload.paging;
+        }
         draft.is_loading = false;
       }),
-
     [ADD_POST]: (state, action) =>
       produce(state, (draft) => {
         draft.list.unshift(action.payload.post);
@@ -262,7 +313,6 @@ export default handleActions(
   initialState
 );
 
-//action creator export
 const actionCreators = {
   setPost,
   addPost,
@@ -270,6 +320,7 @@ const actionCreators = {
   getPostFB,
   addPostFB,
   editPostFB,
+  getOnePostFB,
 };
 
 export { actionCreators };
